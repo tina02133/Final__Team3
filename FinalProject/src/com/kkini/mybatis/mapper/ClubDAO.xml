@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org/DTD Mapper 3.0/EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kkini.mybatis.IClubDAO">
+
+	<select id="clubList" resultType="com.kkini.dto.ClubDTO">
+		<!-- 쿼리문 뷰 조회문으로 교체 -->
+		<!-- SQL 구문은 오라클에서 확인 요망 -->
+		SELECT CLUBNAME, CLUBFOODCTG, CLUBREGION, CLUBMEMBERCOUNT, CLUBOPENKEYWORD
+		FROM C_LIST_VIEW
+	</select>
+	
+	<select id="sortClubListByDate" resultType="com.kkini.dto.ClubDTO">
+		SELECT CLUBNAME, CLUBFOODCTG, CLUBREGION, CLUBMEMBERCOUNT, CLUBOPENKEYWORD
+		FROM C_LIST_VIEW
+		ORDER BY CLUBOPENDATE
+	</select>
+	
+	<select id="sortClubListByMemUp" resultType="com.kkini.dto.ClubDTO">
+			SELECT CLUBNAME, CLUBFOODCTG, CLUBREGION, CLUBMEMBERCOUNT, CLUBOPENKEYWORD
+			FROM C_LIST_VIEW
+			ORDER BY CLUBMEMBERCOUNT
+	</select>
+	
+	<select id="sortClubListByMemDown" resultType="com.kkini.dto.ClubDTO">
+			SELECT CLUBNAME, CLUBFOODCTG, CLUBREGION, CLUBMEMBERCOUNT, CLUBOPENKEYWORD
+			FROM C_LIST_VIEW
+			ORDER BY CLUBMEMBERCOUNT DESC
+	</select>
+
+</mapper>

@@ -1,0 +1,100 @@
+.logo
+{
+	 text-align:center; 
+}
+.openBox
+{
+    position: relative;  /* 상대위치 지정 */
+	border: 5px solid;
+	width: 1100px;
+	height:2000px; 
+	margin:auto; 
+	color: orange;
+	border-radius: 35px;
+	
+}
+.content
+{
+	position : absolute;  
+	top:60px;
+	left :240px;
+	width:700px;
+	height:800px;
+	color: black;
+	font-weight: bold;
+	font-size:20px;
+
+	
+}
+.button_box
+{
+	text-align:center; 
+}
+.red
+{
+	color: orange;
+}
+.blue
+{
+	color: black;
+}
+hr
+{
+	width: 670px;
+	height: 5px;
+    background-color: orange;
+
+}
+.infoText
+{
+	font-size:large;
+	font-family: 'Hi Melody', cursive;
+	font-size:30px;
+	font-weight: 700px;
+	color:black; 
+}
+.mm
+{
+	color: orange;
+}
+
+ .ScoreText {
+  padding: 15px 15px;
+  border-radius: 5px;
+  color: #ffffff; 
+  display: none;
+  position: absolute; /*mouseHover 시 아래의 요소가 밀리지 않고 그 위에 나오게 하기  */
+  width: 470px;
+  height:150px; 
+}
+
+/* 내 점수 보기 mouseHover 시, ScoreText div 보여주기   */
+.checkScore:hover + .ScoreText {
+  display: block;
+}
+ .checkScore
+{
+  width: 220px;
+  height:35px; 
+  background-color:orange;
+  border-radius: 5px;
+  color: #444444;
+  opacity:0.9; /*불투명도  */
+}
+
+
+.alertText
+{
+    font-size:15px; 
+	font-weight: bold;
+    color:red;
+}
+
+.scoreBtn
+{
+	margin-left: 30px;
+	margin-top: 30px;
+	font-size:20px;
+	font-weight: bold;
+	
+}

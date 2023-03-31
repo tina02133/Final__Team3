@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org/DTD Mapper 3.0/EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.kkini.mybatis.IMemaDAO">
+
+	<!--  바로그인 유저 메마 리스트 -->
+	<select id="memaList" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT RESTNAME, REGION, FOODCTG, AGEGROUP, MAINMENU, VISITDATE, DEADLINE, PARTYMEMBERCOUNT, PARTYMASTER, 
+    	   ATTENDSCORE, MENUPRICE, ISCLOSED, OPENCODE
+	FROM MM_LIST_VIEW M2
+	WHERE ISCLOSED = 'FALSE'
+	AND (SELECT COUNT(*) FROM MM_CHECK WHERE MM_OPEN_CODE = M2.OPENCODE) <![CDATA[<]]> 1
+	
+	</select>
+	
+	<!--  로그인 유저 메마 리스트 -->
+	<select id="memaListLogin" parameterType="java.lang.String" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT RESTNAME, REGION, FOODCTG, AGEGROUP, MAINMENU, VISITDATE, DEADLINE, PARTYMEMBERCOUNT, PARTYMASTER, 
+       ATTENDSCORE, MENUPRICE, ISCLOSED, OPENCODE, GENDER
+       , (
+            SELECT COUNT(*) 
+            FROM MM_LIST_VIEW M1
+            WHERE M1.OPENCODE = M2.OPENCODE
+              AND M1.REGION LIKE '%' || #{intregion} ||'%'
+         ) AS REGIONMATCH
+       , (
+            SELECT COUNT(*) 
+            FROM MM_LIST_VIEW M1 
+            WHERE M1.OPENCODE = M2.OPENCODE
+              AND (M1.GENDER = #{gender} OR M1.GENDER = '무관')
+         ) AS GENDERMATCH
+	FROM MM_LIST_VIEW M2
+	WHERE ISCLOSED = 'FALSE'
+	AND (SELECT COUNT(*) FROM MM_CHECK WHERE MM_OPEN_CODE = M2.OPENCODE) <![CDATA[<]]> 1
+	ORDER BY REGIONMATCH + GENDERMATCH DESC, ${genderOrder}, REGIONMATCH DESC
+	
+	</select>
+	
+	<!-- 메마 리스트 - 최신순(수정 필요) -->
+	<select id="sortMemaListByDate" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT RESTNAME, REGION, FOODCTG, AGEGROUP, MAINMENU, VISITDATE, DEADLINE, PARTYMEMBERCOUNT, PARTYMASTER, 
+    	   ATTENDSCORE, MENUPRICE, ISCLOSED, OPENCODE
+	FROM MM_LIST_VIEW
+	WHERE ISCLOSED = 'FALSE'
+	ORDER BY OPENCODE DESC
+	</select>
+	
+	<!-- 메마 리스트 - 마감임박순 -->
+	<select id="sortMemaListByClose" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT RESTNAME, REGION, FOODCTG, AGEGROUP, MAINMENU, VISITDATE, DEADLINE, PARTYMEMBERCOUNT, PARTYMASTER, 
+    	   ATTENDSCORE, MENUPRICE, ISCLOSED, OPENCODE
+	FROM MM_LIST_VIEW
+	WHERE ISCLOSED = 'FALSE'
+	ORDER BY DEADLINE
+	
+	</select>
+	
+	
+	<!-- 메마 검색필터 - 연령 -->
+	<select id="memaSearchAge" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT AGE_GROUP_CASE AS AGEGROUP, AGE_GROUP_CODE AS AGECODE
+	FROM AGE_GROUP
+
+	
+	</select>
+	
+	
+	<!-- 메마 검색필터 - 성별 -->
+	<select id="memaSearchGender" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT GENDER_CTG AS GENDER, GENDER_CODE AS GENDERCODE
+	FROM GENDER
+
+	
+	</select>
+	
+	
+	<!-- 메마 검색필터 - 음식종류-->
+	<select id="memaSearchFood" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT FOOD_CASE AS FOODCTG, FOOD_CTG_CODE AS FOODCODE
+	FROM FOOD_CTG
+
+	</select>
+	
+	<!-- 메마 검색 리스트 -->
+	<select id="searchMema" parameterType="java.lang.String" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT A.RESTNAME AS RESTNAME, A.REGION AS REGION, A.FOODCTG AS FOODCTG, A.GENDER AS GENDER, A.AGEGROUP AS AGEGROUP,
+       A.MAINMENU AS MAINMENU, A.MENUPRICE AS MENUPRICE, A.VISITDATE AS VISITDATE, A.DEADLINE AS DEADLINE, A.PARTYMEMBERCOUNT AS PARTYMEMBERCOUNT,
+       A.ATTENDSCORE AS ATTENDSCORE, A.OPENKEYWORD AS OPENKEYWORD, A.ISCLOSED AS ISCLOSED
+	FROM
+	(
+	SELECT OPENKEYWORD, RESTNAME, REGION, FOODCTG, AGEGROUP, GENDER, MAINMENU, MENUPRICE, VISITDATE, DEADLINE, PARTYMEMBERCOUNT, NOP, PARTYMASTER, ATTENDSCORE, ISCLOSED
+	FROM MM_LIST_VIEW
+	WHERE AGEGROUP =  (SELECT AGE_GROUP_CASE FROM AGE_GROUP WHERE AGE_GROUP_CODE = #{age}) 
+	  AND GENDER = (SELECT GENDER_CTG FROM GENDER WHERE GENDER_CODE = #{gender}) 
+	  AND FOODCTG = (SELECT FOOD_CASE FROM FOOD_CTG WHERE FOOD_CTG_CODE = #{food})
+	  AND (OPENKEYWORD LIKE '%'|| #{keyword} ||'%' OR RESTNAME LIKE '%'|| #{keyword} ||'%' OR MAINMENU LIKE '%'|| #{keyword} ||'%')
+	  AND TO_DATE(VISITDATE, 'YYYY-MM-DD HH24:MI') BETWEEN TO_DATE(#{dateStart},'YYYY-MM-DD HH24:MI') AND TO_DATE(#{dateEnd},'YYYY-MM-DD HH24:MI')
+	) A
+	WHERE A.ISCLOSED = 'FALSE' OR A.ISCLOSED = 'TRUE'
+	
+	</select>
+	
+	
+	
+	<!-- 메메 참여자 방의 상세정보 및 수정 가능 정보 -madeBy동현-->
+	
+	<select id="mmjoinRoomInfo" parameterType="java.lang.String" resultType="java.util.HashMap">
+	SELECT U_NICKNAME AS "chief_nickName", AGE_GROUP_CASE AS "ageGroup" , GENDER_CTG AS "genderCtg", MAIN_MENU AS "mainMenu", PERSONAL_PRICE AS "personalPrice"
+      , REST_NAME AS "restName", REST_LOCATION AS "restLocation", OPEN_KEYWORD AS "openKeyword", VISIT_DATE AS "visitDate"
+      , NOP_CURRENT AS "nopCurrent" , NOP_HOPE AS "nopHope" 
+      , FOOD_CASE AS "foodCtg", MENU_PRICE AS "menuPrice"
+      FROM MM_JOINROOM_INFO
+      WHERE OPEN_CODE = #{openCode}
+
+	</select>
+	
+	<!-- 메마 참가자 리스트 -->
+	<select id="mmAttendees" parameterType="java.lang.String" resultType="com.kkini.dto.MemaDTO">
+	
+	SELECT U_CODE AS USERCODE, U_NICKNAME AS ATTENDEE, MM_APPLY_CODE AS APPLYCODE, READY_DATE AS READYDATE, OPENCODE, GRADE, NOP
+	FROM MM_JOINROOM_MEMBER_VIEW
+	WHERE OPENCODE = #{openCode}
+	</select>
+	
+	<!-- 메마 강퇴하기 -->
+	<insert id="mmKickout" parameterType="java.lang.String">
+	INSERT INTO MM_KICKOUT(MM_KICKOUT_CODE, MM_APPLY_CODE, KICKOUT_DATE)
+	VALUES 
+	(
+	    'MKC'||LPAD(MM_KICKOUT_CODE_SEQ.NEXTVAL, 7, '0')
+	    ,(
+		    SELECT MM_APPLY_CODE
+		    FROM MM_APPLY
+		    WHERE U_CODE = #{userCode}
+		     AND MM_OPEN_CODE = #{openCode}
+	     )
+	     ,SYSDATE
+	)
+	</insert>
+	
+	
+	
+	<!-- 메마 수정시 식당이 등록되어있는지 확인 -->
+	<select id="existRestCount" parameterType="com.kkini.dto.MemaOpenDTO" resultType="java.lang.Integer">
+	SELECT COUNT(*)
+	FROM REST
+	WHERE REST_NAME LIKE #{mmRestName}
+    AND REST_LOCATION LIKE #{mmRestLocation}
+	</select>
+	
+	<!-- 등록되어있는 식당 코드 가져오기 -->
+	<select id="getRestCode" parameterType="com.kkini.dto.MemaOpenDTO" resultType="java.lang.String">
+	SELECT REST_CODE
+	FROM REST
+	WHERE REST_NAME LIKE #{mmRestName}
+	AND   REST_LOCATION LIKE #{mmRestLocation}
+	</select>
+	
+	
+	<!--수정시 식당테이블에 등록되어있지 않다면 식당테이블에 등록  -->
+	<insert id="addRest" parameterType="com.kkini.dto.MemaOpenDTO">
+	INSERT INTO REST(REST_CODE,U_CODE,REST_NAME,REST_LOCATION, REGIS_DATE)
+	VALUES('RESC'||LPAD(REST_SEQ.NEXTVAL,6,'0'),#{mmUserCode} ,#{mmRestName}  ,#{mmRestLocation}  , SYSDATE)
+	<selectKey keyColumn="REST_CODE" keyProperty="restCode" order="AFTER" resultType="java.lang.String">
+	SELECT REST_CODE
+	FROM REST
+	WHERE REST_NAME LIKE #{mmRestName}
+	AND   REST_LOCATION LIKE #{mmRestLocation}
+	</selectKey>
+	</insert>
+
+	<!-- 메메 개설방 업데이트문 -->
+	<update id="updateOpenMM" parameterType="com.kkini.dto.MemaOpenDTO">
+	UPDATE MM_OPEN
+	SET GENDER_CODE = #{mmGenderCode}
+    ,FOOD_CTG_CODE = #{mmFoodCtgCode}
+    ,REST_CODE = #{restCode}
+    ,NOP = #{mmNop}
+    ,VISIT_DATE = TO_DATE(#{mmVisitDate},'YYYY-MM-DD HH24:MI')
+    ,MAIN_MENU =  #{mmMenu}
+    ,MAIN_MENU_PRICE= #{mmMenuPrice}
+    ,AGE_GROUP_CODE = #{mmAgeGroupCode}
+    ,OPEN_KEYWORD = #{mmOpenKeyWord}
+	WHERE MM_OPEN_CODE = #{openCode}
+	</update>
+	
+	<!-- 메메 수정시 현재 방 참여인원 조회 -->
+	<select id="nopCurrentMM" parameterType="java.lang.String" resultType="java.lang.Integer">
+	SELECT NOP_CURRENT AS "nopCurrent"
+	FROM MM_JOINROOM_INFO
+	WHERE OPEN_CODE = #{openCode}
+	</select>
+	
+
+	<!-- 메메 퇴장 -->
+	<delete id="mmOut" parameterType="java.lang.String">
+		DELETE
+		FROM MM_APPLY
+		WHERE MM_OPEN_CODE = #{openCode}
+ 		AND U_CODE = #{userCode}
+	</delete>
+	
+	<!-- 로그인 회원 레디 여부 확인 -->
+	<select id="mmReadyCheck" parameterType="java.lang.String" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+		FROM MM_JOINROOM_MEMBER_VIEW
+		WHERE OPENCODE = #{openCode}
+		  AND U_NICKNAME = #{nickName}
+		  AND READY_DATE IS NOT NULL
+	</select>
+	
+	<!-- 레디 -->
+	<update id="mmReady" parameterType="java.lang.String">
+		UPDATE MM_APPLY
+		SET READY_DATE = SYSDATE
+		WHERE MM_OPEN_CODE = #{openCode}
+		  AND U_CODE = #{userCode}
+	</update>
+	
+	<!-- 레디 해제 -->
+	<update id="mmUnReady" parameterType="java.lang.String">
+		UPDATE MM_APPLY
+		SET READY_DATE = NULL
+		WHERE MM_OPEN_CODE = #{openCode}
+		  AND U_CODE = #{userCode}
+	</update>
+
+	<!-- 수정시 전원 레디상태 해제 -->
+	<update id="updatemmReady" parameterType="java.lang.String">
+	UPDATE MM_APPLY
+	SET READY_DATE = NULL
+	WHERE MM_OPEN_CODE = #{openCode}
+	</update>
+	
+	<!-- 메메방 삭제 -->
+	<insert id="deleteMM" parameterType="java.util.HashMap">
+	INSERT INTO MM_CHECK(MM_CHECK_CODE,MM_CT_CODE,MM_OPEN_CODE,CHECK_DATE)
+	VALUES('MCC'||LPAD(MM_CHECK_SEQ.NEXTVAL,7,'0'),(SELECT MM_CT_CODE FROM MM_CHECK_TYPE WHERE CHECK_TYPE LIKE #{checkType} ),#{openCode} ,SYSDATE)
+	</insert>
+	
+
+</mapper>
